@@ -1,0 +1,52 @@
+openapi: 3.0.3
+info:
+  title: External Shipping APi
+  description: This API is used for external shipping operations, providing endpoints to manage and track shipping orders.
+  version: 1.0.0
+servers:
+  - url: 'http://localhost:9990'
+    description: External Shipping API server
+paths:
+  /api/external/shipping:
+    post:
+      summary: Delegate shipping to external provider
+      operationId: delegateShipping
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShippingDTO'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackingDTO'
+components:
+  schemas:
+    ShippingDTO:
+      type: object
+      required:
+        - id
+        - name
+        - address
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        address:
+          type: string
+    TrackingDTO:
+      type: object
+      properties:
+        status:
+          enum:
+            - SHIPPED
+        trackingNumber:
+          type: string
+          maxLength: 30
+  

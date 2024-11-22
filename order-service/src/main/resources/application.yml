@@ -1,0 +1,74 @@
+logging:
+  pattern:
+    level: '%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]'
+  include-application-name: false
+  level:
+    org.zalando.logbook: trace
+logbook:
+  format:
+    style: http
+  predicate:
+    include:
+      - path: "/api/**"
+spring:
+  application:
+    name: order-service
+  profiles:
+    group:
+      'dev': 'local'
+  datasource:
+    url: jdbc:postgresql://localhost:5432/order_service
+    username: order_service
+    password: order_service
+  docker:
+    compose:
+      file: ./order-service/compose.yml
+      start:
+        skip: never
+      readiness:
+        timeout: 1m
+  jpa:
+    open-in-view: true
+    hibernate:
+      ddl-auto: validate
+  mvc:
+    problemdetails:
+      enabled: true
+  kafka:
+    bootstrap-servers: localhost:9094
+    properties:
+      spring.json.trusted.packages: "*"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: order-service
+      key-deserializer: org.apache.kafka.common.serialization.LongDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+
+  web:
+    resources:
+      static-locations: classpath:/api
+  security:
+    oauth2:
+      client:
+        registration:
+          order-service-client:
+            clientId: order-service
+            client-secret: YTVanMprszT71YtyO1x5a8Y0bqLS4a27
+            provider: keycloak
+            authorization-grant-type: client_credentials
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:9080/realms/intesys-all-you-can-fix
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+application:
+  oauth2-shipping-service-registration-id: order-service-client
+  shipping-service-base-url: http://localhost:8081

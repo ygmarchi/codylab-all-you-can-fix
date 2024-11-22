@@ -1,0 +1,77 @@
+name: intesys-codylab-challenge-all-you-can-fix
+services:
+  order-datasource:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    labels:
+      org.springframework.boot.ignore: true
+  liquibase:
+    image: liquibase/liquibase:4.30-alpine
+    entrypoint: ["liquibase","update"]
+    environment:
+      LIQUIBASE_COMMAND_URL: jdbc:postgresql://order-datasource:5432/${POSTGRES_USER}
+      LIQUIBASE_COMMAND_CHANGELOG_FILE: db.changelog.xml
+      LIQUIBASE_SEARCH_PATH: /liquibase/changelog
+      LIQUIBASE_COMMAND_USERNAME: ${POSTGRES_USER}
+      LIQUIBASE_COMMAND_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./liquibase/changelog:/liquibase/changelog
+    labels:
+      org.springframework.boot.ignore: true
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command:
+      - 'start-dev'
+      - '--import-realm'
+      - '--verbose'
+    ports:
+      - '9080:9080'
+      - '9000:9000'
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN}
+      KC_HTTP_PORT: 9080
+      KC_HTTP_ENABLED: true
+      KC_HEALTH_ENABLED: true
+    volumes:
+      - ../keycloak/realm.json:/opt/keycloak/data/import/realm.json
+  zookeeper:
+    image: confluentinc/cp-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SYNC_LIMIT: 2
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+  kafka:
+    image: confluentinc/cp-kafka
+    ports:
+      - "9094:9094"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,OUTSIDE://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,OUTSIDE://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_JMX_PORT: 9997
+      KAFKA_JMX_OPTS: -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=kafka0 -Dcom.sun.management.jmxremote.rmi.port=9997
+    deploy:
+      resources:
+        limits:
+          memory: 500M

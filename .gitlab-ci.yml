@@ -1,0 +1,22 @@
+include:
+  - project: "intesys/devops/ci"
+    ref: main
+    file: "java-backend/.gitlab-ci.yml"
+
+default:
+  image: registry.intesys.it/proxy/library/eclipse-temurin:21
+
+variables:
+  REGISTRY_PROJECT: 'intesys-codylab'
+  DOCKER_IMAGE_NAME: 'all-you-can-fix'
+  IMAGE_REGISTRY_USERNAME: 'empty'
+  IMAGE_REGISTRY_PASSWORD: 'empty'
+  SONARQUBE_TOKEN: 'empty'
+  SONAR_HOST_URL: 'empty'
+
+sonarqube:
+  rules:
+    - when: never
+build docker image:
+  rules:
+    - when: never

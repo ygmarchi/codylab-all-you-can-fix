@@ -1,0 +1,59 @@
+logging:
+  pattern:
+    level: '%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]'
+  include-application-name: false
+  level:
+    org.zalando.logbook: trace
+logbook:
+  format:
+    style: http
+  predicate:
+    include:
+      - path: "/api/**"
+server:
+  port: 8081
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+spring:
+  application:
+    name: shipping-service
+  profiles:
+    group:
+      'dev': 'local'
+  docker:
+    compose:
+      file: ./shipping-service/compose.yml
+      start:
+        skip: never
+  datasource:
+    url: jdbc:postgresql://localhost:5433/shipping_service
+    username: shipping_service
+    password: shipping_service
+  jpa:
+    hibernate:
+      ddl-auto: update
+  kafka:
+    bootstrap-servers: localhost:9094
+    consumer:
+      group-id: shipping-service
+      key-deserializer: org.apache.kafka.common.serialization.LongDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.LongSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+  web:
+    resources:
+      static-locations: classpath:/api
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9080/realms/intesys-all-you-can-fix
+          audiences:
+            - shipping-service
+
+application:
+  shipping-provider-base-url: https://brt-api.brt.it

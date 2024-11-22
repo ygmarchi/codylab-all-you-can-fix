@@ -1,0 +1,103 @@
+name: intesys-codylab-challenge-all-you-can-fix
+services:
+  postgres:
+    image: 'postgres:16'
+    environment:
+      POSTGRES_USER: shipping-service
+      POSTGRES_PASSWORD: shipping-service
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  liquibase:
+    image: liquibase/liquibase
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      LIQUIBASE_COMMAND_URL: jdbc:postgresql://postgres:5432/shipping-service
+      LIQUIBASE_COMMAND_CHANGELOG_FILE: db.changelog.xml
+      LIQUIBASE_SEARCH_PATH: /liquibase/changelog
+      LIQUIBASE_COMMAND_USERNAME: shipping-service
+      LIQUIBASE_COMMAND_PASSWORD: shipping-service
+    volumes:
+      - ./postgres/changelog:/liquibase/changelog
+    entrypoint: ["liquibase","update"]
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    command: ['start-dev', '--import-realm','--verbose']
+    ports:
+      - '9080:9080'
+      - '9443:9443'
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 9080
+      KC_HTTPS_PORT: 9443
+      KC_HOSTNAME_URL: http://localhost:9080
+      KC_HOSTNAME_ADMIN_URL: http://localhost:9080
+      KC_HOSTNAME_STRICT_BACKCHANNEL: true
+      KC_HTTP_RELATIVE_PATH: /
+      KC_HTTP_ENABLED: true
+      KC_HEALTH_ENABLED: true
+      KC_METRICS_ENABLED: true
+    healthcheck:
+      test: [ 'CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java /tmp/HealthCheck.java http://localhost:8080/auth/health/live' ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - ./keycloak/realm.json:/opt/keycloak/data/import/realm.json
+  zookeeper:
+    image: confluentinc/cp-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SYNC_LIMIT: 2
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+  kafka:
+    image: confluentinc/cp-kafka
+    ports:
+      - "9094:9094"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,OUTSIDE://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,OUTSIDE://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_JMX_PORT: 9997
+      KAFKA_JMX_OPTS: -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=kafka0 -Dcom.sun.management.jmxremote.rmi.port=9997
+    deploy:
+      resources:
+        limits:
+          memory: 500M
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - "8089:8090"
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      DYNAMIC_CONFIG_ENABLED: 'true'
+  wiremock:
+    image: wiremock/wiremock:3.9.1
+    container_name: wiremock
+    ports:
+      - "9990:8080"
+    environment:
+      - WIREMOCK_PORT=9990
+    volumes:
+      - ./wiremock/mappings:/home/wiremock/mappings
