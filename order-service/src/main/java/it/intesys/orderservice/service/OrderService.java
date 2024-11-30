@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @AllArgsConstructor
-@Transactional(readOnly = true)
+@Transactional
 @Slf4j
 public class OrderService {
 
