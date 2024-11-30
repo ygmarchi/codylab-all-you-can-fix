@@ -20,7 +20,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ShippingDTO'
+                type: integer
+                format: int64
 components:
   schemas:
     ShippingDTO:
