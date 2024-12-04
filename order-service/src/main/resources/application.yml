@@ -31,6 +31,7 @@ spring:
     open-in-view: true
     hibernate:
       ddl-auto: validate
+      properties.hibernate.jdbc.batch_size: 100
   mvc:
     problemdetails:
       enabled: true
@@ -41,11 +42,14 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      batch-size: 50000
+      linger.ms: 1000
     consumer:
       group-id: order-service
       key-deserializer: org.apache.kafka.common.serialization.LongDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-
+      fetch.min.bytes: 50000
+      fetch.max.wait.ms: 1000
   web:
     resources:
       static-locations: classpath:/api

@@ -35,6 +35,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+      properties.hibernate.jdbc.batch_size: 100
   kafka:
     bootstrap-servers: localhost:9094
     consumer:
@@ -43,9 +44,13 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "com.fasterxml.jackson.databind.node"
+      fetch.min.bytes: 50000
+      fetch.max.wait.ms: 1000
     producer:
       key-serializer: org.apache.kafka.common.serialization.LongSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      batch-size: 50000
+      linger.ms: 1000
   web:
     resources:
       static-locations: classpath:/api
