@@ -1,14 +1,10 @@
 package it.intesys.orderservice.api;
 
 import io.swagger.v3.oas.annotations.Operation;
-import it.intesys.orderservice.dto.OrderDTO;
 import it.intesys.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.stream.IntStream;
 
 import static it.intesys.orderservice.dto.OrderDTOFactory.*;
 
@@ -31,7 +27,7 @@ public class OrderController {
     @Operation(summary = "Places a new order")
     public Long save() {
 
-        return orderService.save(createOrderDTO());
+        return orderService.place(createOrderDTO());
     }
 
     /**
@@ -41,6 +37,6 @@ public class OrderController {
     @GetMapping("/api/orders/bulk")
     @Operation(summary = "Places a thousand new orders")
     public void bulkSave() {
-        createOrderDTOList().stream().parallel().forEach(orderService::save);
+        createOrderDTOList().stream().parallel().forEach(orderService::place);
     }
 }

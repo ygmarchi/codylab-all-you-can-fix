@@ -1,5 +1,6 @@
 package it.intesys.orderservice.service;
 
+import it.intesys.orderservice.exception.DuplicateOrderId;
 import it.intesys.orderservice.mapper.OrderMapper;
 import it.intesys.orderservice.repository.OrderRepository;
 import it.intesys.orderservice.entity.Order;
@@ -26,7 +27,9 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    public Long save(OrderDTO orderDTO) {
+    public Long place(OrderDTO orderDTO) {
+        if (orderDTO.id() != null && orderRepository.findById(orderDTO.id()).isPresent())
+            throw new DuplicateOrderId(orderDTO.id());
 
         Order order = orderMapper.toEntity(orderDTO);
         order = orderRepository.save(order);

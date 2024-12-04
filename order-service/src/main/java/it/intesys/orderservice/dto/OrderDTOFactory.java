@@ -42,7 +42,7 @@ public class OrderDTOFactory {
         int numberOfDuplicates = random.nextInt(100) + 1; // Random number between 1 and 100
         List<OrderDTO> orderDTOList = new ArrayList<>();
 
-        IntStream.range(0, 1000).forEach(i -> {
+        IntStream.range(0, 2).forEach(i -> {
             if (i < numberOfDuplicates) {
                 orderDTOList.add(createOrderDTO(duplicatedId));
             } else {

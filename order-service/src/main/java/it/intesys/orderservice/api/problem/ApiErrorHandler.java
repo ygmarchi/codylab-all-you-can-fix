@@ -1,12 +1,12 @@
 package it.intesys.orderservice.api.problem;
 
+import it.intesys.orderservice.exception.OrderServiceException;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.ProblemDetail;
-import org.springframework.http.ResponseEntity;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.http.*;
 import org.springframework.validation.ObjectError;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -28,4 +28,24 @@ public class ApiErrorHandler extends ResponseEntityExceptionHandler {
         }
         return defaultResponse;
     }
+
+    @org.springframework.web.bind.annotation.ExceptionHandler
+    protected ResponseEntity<Object> handleOrderServiceException(OrderServiceException ex, WebRequest request) {
+        return handleOrderServiceException(ex, HttpStatus.INTERNAL_SERVER_ERROR, request);
+    }
+
+    private ResponseEntity<Object> handleOrderServiceException(OrderServiceException ex, HttpStatus status, WebRequest request) {
+        ErrorResponse.Builder builder = ErrorResponse.builder(ex, status, ex.getMessage());
+        builder.detailMessageCode(ex.getCode());
+        if (ex.getArguments() != null)
+            builder.detailMessageArguments(ex.getArguments());
+        ErrorResponse errorResponse = builder.build();
+        ProblemDetail body = errorResponse.updateAndGetBody(getMessageSource(), LocaleContextHolder.getLocale());
+        logger.error(body.getDetail());
+        logger.trace(ex.getMessage(), ex);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/json;charset=UTF-8"));
+        return createResponseEntity(body, headers, status, request);
+    }
+
 }
