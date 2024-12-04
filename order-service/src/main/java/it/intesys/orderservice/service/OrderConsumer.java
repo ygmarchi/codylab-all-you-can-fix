@@ -31,13 +31,13 @@ public class OrderConsumer {
 
         long orderId = jsonNode.get("orderId")
                         .asLong();
-        log.info("Shipping request received for order {}", orderId);
+        log.info("Shipping status update received for order {}", orderId);
         orderService.updateStatus(orderId, "SHIPPING");
     }
 
     @KafkaListener(topics = "order.shipped")
     public void consumeOrderShippedEvent(Long orderId) {
-
-        orderService.updateStatus(orderId, "SHIPPING");
+        log.info("Shipped status update received for order {}", orderId);
+        orderService.updateStatus(orderId, "SHIPPED");
     }
 }

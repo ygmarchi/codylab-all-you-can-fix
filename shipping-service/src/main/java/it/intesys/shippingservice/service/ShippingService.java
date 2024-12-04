@@ -35,11 +35,12 @@ public class ShippingService {
 
     public void updateTrackingInfo(long id, TrackingDTO trackingDTO) {
 
-        log.debug("Request to update tracking info for shipping with id {}", id);
+        log.info("Request to update tracking info for shipping with id {}", id);
         Shipping shipping = shippingRepository.findById(id)
                         .orElseThrow(() -> new RuntimeException("Shipping not found with id: " + id));
         shipping.setTrackingNumber(trackingDTO.getTrackingNumber());
         shippingRepository.save(shipping);
+        log.info("Shipping {} updated tracking info", shipping.getId());
         kafkaTemplate.send("order.shipped", shipping.getOrderId());
     }
 
