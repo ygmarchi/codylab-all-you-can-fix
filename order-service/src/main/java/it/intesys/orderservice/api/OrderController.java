@@ -38,7 +38,7 @@ public class OrderController {
      * Places a thousand new orders.
      * This is a bulk operation that can be used to test the performance of the system.
      */
-    @GetMapping("/api/orders/bluk")
+    @GetMapping("/api/orders/bulk")
     @Operation(summary = "Places a thousand new orders")
     public void bulkSave() {
         createOrderDTOList().stream().parallel().forEach(orderService::save);
